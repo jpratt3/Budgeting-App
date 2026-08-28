@@ -11,6 +11,7 @@ import { renderGrowth } from './growth.js';
 import { renderSankey } from './sankey.js';
 import { renderRecurring } from './recurring.js';
 import { renderBalances } from './accounts.js';
+import { renderHealth } from './health.js';
 
 const TITLES = {
   dashboard: 'Dashboard',
@@ -27,7 +28,7 @@ const TITLES = {
 // What each page needs redrawn once it becomes visible. Pages that only contain
 // HTML the last renderAll() already wrote (transactions, review) need nothing.
 const ON_ENTER = {
-  dashboard: () => { renderPie(...lastPie); renderPaceChart(); renderNetWorth(); },
+  dashboard: () => { renderPie(...lastPie); renderPaceChart(); renderNetWorth(); withHistory(renderHealth); },
   accounts:  () => { renderBalances(); withHistory(renderNetWorth); },
   cashflow:  () => renderSankey(),
   budget:    () => renderBudget(),

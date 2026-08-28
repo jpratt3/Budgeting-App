@@ -58,6 +58,7 @@ same values for Chart.js. Change a colour in both or they drift.
 | `state.js` | the shared mutable `state` object + `bumpGen()` |
 | `config.js` | **everything a new user must review** — rent payees, bank transfer memos, essential categories, brokerages |
 | `rules.js` | universal classification rules: Plaid taxonomy + national merchant brands |
+| `health.js` | setup-health checks — surfaces a half-configured `config.js` on the Dashboard |
 | `format.js` | `fmt`, `fmtSigned`, `fmtShort`, `esc`, `cleanLabel`, date labels |
 | `theme.js` | chart palette `C` + shared Chart.js defaults and axis builders |
 | `period.js` | `periodStart` — the one definition of where the selected period starts |
@@ -98,6 +99,15 @@ canvas under a `display:none` parent measures zero, so every render guards on
 `canvas.offsetParent !== null` and `nav.js` redraws a page's charts when it opens.
 `grid-2`/`grid-3` children carry `min-width: 0`, without which a canvas widens its track
 and scrolls the page sideways.
+
+*Setup health (`health.js`):* the classification engine fails quietly by design — an
+unrecognised transfer memo falls through to neutral, an unlisted landlord simply isn't
+rent. That is the right behaviour for the engine — a wrong guess is worse than no guess —
+but it means a half-configured install shows confident, wrong numbers.
+`health.js` checks for exactly those gaps and renders them above the Dashboard KPIs.
+Structural checks (rent, transfers) run against the 12-month history rather than the
+selected period, or a 2-week window would report "no rent detected" every time. Each item
+is dismissible to localStorage, with a way back.
 
 *Escaping:* Plaid strings (merchant names, categories, error text) are third-party data
 written into `innerHTML`. Everything user-visible goes through `esc()` from `format.js`.

@@ -11,6 +11,7 @@ import { renderGrowth } from './growth.js';
 import { renderTransactions } from './transactions.js';
 import { renderSankey } from './sankey.js';
 import { rememberPie } from './nav.js';
+import { renderHealth } from './health.js';
 
 // One pass over the period producing every number the pages need.
 export function periodTotals(txns) {
@@ -83,6 +84,7 @@ export function renderAll(txns) {
   renderGrowth();
   renderTransactions();
   renderSankey();
+  renderHealth();
 }
 
 // Collapsible category totals used by the Reports page columns.

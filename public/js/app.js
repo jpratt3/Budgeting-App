@@ -6,6 +6,7 @@ import { askSuggestion, chatGrow, chatKey, resetChat, sendChat, toggleChat } fro
 import { loadAll, loadConnectedAccounts } from './data.js';
 import { addMilestone, deleteMilestone, loadGrowth, renderGrowth, toggleLazyGrowth } from './growth.js';
 import { ensureHistory, renderNetWorth, setHistoryRange } from './history.js';
+import { dismissHealth, renderHealth, resetHealth } from './health.js';
 import { decide } from './lazy.js';
 import { go } from './nav.js';
 import { resetLazySurvey, saveLazySurvey, showLazySurvey, surveyOptChange } from './survey.js';
@@ -44,7 +45,7 @@ export async function initApp() {
 
   // The 365-day history backs the dashboard net-worth chart and the month-over-month
   // delta, so warm it in the background rather than waiting for a page visit.
-  ensureHistory().then(() => { renderNetWorth(); renderBalances(); });
+  ensureHistory().then(() => { renderNetWorth(); renderBalances(); renderHealth(); });
 }
 
 // The markup (both index.html and the template strings the render functions emit)
@@ -53,9 +54,9 @@ export async function initApp() {
 // published on window explicitly — this list IS the app's public surface.
 Object.assign(window, {
   addBudgetItem, addMilestone, askSuggestion, assignCategory, chatGrow, chatKey,
-  connectBank, decide, deleteBudgetItem, deleteMilestone, editBalance,
+  connectBank, decide, deleteBudgetItem, deleteMilestone, dismissHealth, editBalance,
   editBudgetAmount, go, loadAll, renderGrowth, resetChat, resetLazySurvey,
-  saveLazySurvey, sendChat, setHistoryRange, setPeriod, setTxnFilter,
+  resetHealth, saveLazySurvey, sendChat, setHistoryRange, setPeriod, setTxnFilter,
   surveyOptChange, toggleChat, toggleLazyGrowth,
 });
 

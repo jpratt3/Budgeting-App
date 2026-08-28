@@ -213,6 +213,47 @@ body {
 .delta.down { background: #fdeceb; color: var(--spend); }
 
 /* ============================================================================
+   Setup health
+   ========================================================================= */
+.health {
+  border: 1px solid #f6dcc7; background: #fffaf6;
+  border-radius: var(--radius); padding: 13px 16px; margin-bottom: 16px;
+}
+.health-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  font-size: 0.83rem; font-weight: 650; color: var(--accent-dim);
+}
+.health-count { margin-left: auto; font-size: 0.72rem; font-weight: 500; color: var(--faint); }
+.health-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 0; border-top: 1px solid #f6e6da;
+}
+.health-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex: 0 0 6px; margin-top: 6px;
+  background: var(--accent);
+}
+.health-item.info .health-dot { background: #c9c4bb; }
+.health-body { flex: 1; min-width: 0; }
+.health-title { font-size: 0.82rem; font-weight: 600; }
+.health-detail { font-size: 0.76rem; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+.health-fix {
+  font-family: var(--mono); font-size: 0.71rem; color: var(--accent-dim);
+  background: var(--accent-soft); display: inline-block;
+  padding: 2px 7px; border-radius: 5px; margin-top: 5px;
+}
+.health-item.info .health-fix { color: var(--muted); background: #f2f0ed; }
+.health-x {
+  border: none; background: none; color: var(--faint); cursor: pointer;
+  font-size: 0.78rem; padding: 3px 5px; border-radius: 5px; flex: 0 0 auto;
+}
+.health-x:hover { background: #f4e9e2; color: var(--text); }
+.health-cleared { font-size: 0.74rem; color: var(--faint); margin-bottom: 14px; }
+.linkish {
+  border: none; background: none; padding: 0; cursor: pointer;
+  font: inherit; color: var(--accent); text-decoration: underline;
+}
+
+/* ============================================================================
    Row lists (transactions, accounts, recurring)
    ========================================================================= */
 .row-list { display: flex; flex-direction: column; }
