@@ -13,7 +13,7 @@ The app runs on port 3000 (configurable via `PORT` in `.env`). There is no build
 ## Stack
 
 - **Backend:** Node.js + Express 5 (`server.js`) — CommonJS modules
-- **Frontend:** Single `index.html` with embedded vanilla JS and CSS — no framework, no build step
+- **Frontend:** `index.html` (markup only) + vanilla-JS ES modules in `public/js/` + `public/styles.css` — no framework, no build step
 - **Banking data:** Plaid SDK (production environment, credentials in `.env`)
 - **Charts:** Chart.js via CDN
 - **Persistence:**
@@ -133,11 +133,11 @@ Anything added to `public/` is world-readable to the browser.
 *Classification (`classify()`)* maps each Plaid transaction to `'skip'`, `'balance'`, `'income'`, `'savings'`, `'essential'`, or `'extra'`. Order matters:
 1. Credit card bill payments (`isCreditCardPayment()`) → `'skip'` (both legs: checking-side and card-side)
 2. **Rent (`isRentTxn()`: PFC `RENT_AND_UTILITIES_RENT` or `RENT_MERCHANTS` name match) → `'essential'`** — checked before the transfer/P2P skips so rent paid by ACH or Zelle counts as real spend
-3. Internal checking↔savings transfers (memo format is bank-specific): checking-side legs (`to sv:` / `from sv:`) → `'savings'` (this is what feeds "Transferred to Savings"); savings-side duplicates (`from ck:` / `to ck:`) → `'skip'`
+3. Internal checking↔savings transfers (`INTERNAL_TRANSFER_MEMOS` in `config.js` — bank-specific, ships empty): checking-side legs → `'savings'` (this is what feeds "Transferred to Savings"); savings-side duplicates → `'skip'`. Unconfigured, both lists are empty and transfers fall through to rule 5 (neutral)
 4. P2P cash apps (Zelle/Venmo/Cash App) → `'skip'` (neutral by design — deliberate June-2026 decision)
 5. Other `TRANSFER_OUT` → `'savings'` if a known broker/HYSA (`SAVINGS_MERCHANTS`), else `'skip'`
 6. Any `primary === 'INCOME'` → `'income'`; `TRANSFER_IN` → `'balance'` (excluded)
-7. Rideshare and pharmacy → `'extra'` (review queue); `ESSENTIAL_CATS` → `'essential'`; else `'extra'`. A lazy decision of `'essential'` promotes to essentials.
+7. Rideshare and pharmacy → `'extra'` (review queue); `ESSENTIAL_CATS` or an `ESSENTIAL_MERCHANTS` name match → `'essential'`; else `'extra'`. A lazy decision of `'essential'` promotes to essentials.
 
 *Income is netted, not filtered:* income sums use `+= -t.amount` so positive-amount INCOME reversals cancel their credit twin. One-off credits ≥ `ONE_OFF_INCOME_MIN` ($5k) are charted separately from the recurring savings rate.
 
@@ -171,12 +171,15 @@ build step, no devDependencies — `public/package.json` marks the frontend dire
 ESM so Node can import the browser modules directly, and `tests/helpers.mjs` stubs the
 `localStorage` that `getLazyPref()` reads.
 
-Coverage is deliberately narrow: the two pieces of order-dependent money logic.
+Coverage is deliberately narrow: the order-dependent money logic and the setup checks.
 - `classify.test.mjs` — the early-return ladder. Rent must outrank the P2P skip or rent
   paid by Zelle disappears; rideshare must outrank `ESSENTIAL_CATS` or every Uber
   silently becomes a necessity. Also covers the memo cache and its invalidation.
 - `budget.test.mjs` — longest-prefix matching, so one charge is claimed by exactly one
   budget item, plus the `state.gen` index invalidation.
+- `health.test.mjs` — the setup-health arithmetic, above all that budget coverage divides
+  by variable spend (rent excluded); the original divide-by-total-spend bug meant the
+  warning almost never fired.
 
 Tests that depend on `config.js` read the configured values rather than hardcoding
 them, and `t.skip()` with a reason when a list ships empty — so the same suite is
