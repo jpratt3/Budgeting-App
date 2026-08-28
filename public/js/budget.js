@@ -1,7 +1,7 @@
 import { state, bumpGen } from './state.js';
 import { esc, fmt, fmtSigned, pct } from './format.js';
 import { classify, clearDerivedCaches, isRentTxn } from './classify.js';
-import { ESSENTIAL_CATS } from './constants.js';
+import { ESSENTIAL_CATS } from './config.js';
 import { C, moneyScale, catScale } from './theme.js';
 
 let budgetChart = null;

@@ -1,19 +1,29 @@
 {
   "name": "budget-app",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "Self-hosted personal budgeting dashboard — links real accounts through Plaid, classifies every transaction, and tracks spend against a budget you define. Runs entirely on your own machine.",
+  "keywords": [
+    "budget",
+    "personal-finance",
+    "plaid",
+    "self-hosted",
+    "sqlite",
+    "express"
+  ],
+  "license": "MIT",
+  "author": "jpratt3",
   "type": "commonjs",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"No test suite yet — see README\" && exit 1"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.121.0",
     "better-sqlite3": "^12.9.0",
-    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "plaid": "^42.2.0"

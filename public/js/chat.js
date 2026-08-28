@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { CHAT_SUGGESTIONS, CHAT_TXN_CAP } from './constants.js';
+import { CHAT_SUGGESTIONS, CHAT_TXN_CAP } from './rules.js';
 import { cleanLabel } from './format.js';
 import { classify, getEffectiveDecision, isRentTxn } from './classify.js';
 import { periodDates } from './period.js';

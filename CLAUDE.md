@@ -56,7 +56,8 @@ same values for Chart.js. Change a colour in both or they drift.
 | module | holds |
 | --- | --- |
 | `state.js` | the shared mutable `state` object + `bumpGen()` |
-| `constants.js` | merchant/category lists, survey definitions, thresholds |
+| `config.js` | **everything a new user must review** — rent payees, bank transfer memos, essential categories, brokerages |
+| `rules.js` | universal classification rules: Plaid taxonomy + national merchant brands |
 | `format.js` | `fmt`, `fmtSigned`, `fmtShort`, `esc`, `cleanLabel`, date labels |
 | `theme.js` | chart palette `C` + shared Chart.js defaults and axis builders |
 | `period.js` | `periodStart` — the one definition of where the selected period starts |

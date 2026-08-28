@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { monthLabel, fmtShort } from './format.js';
 import { classify } from './classify.js';
 import { migratePendingDecisions } from './lazy.js';
-import { ONE_OFF_INCOME_MIN } from './constants.js';
+import { ONE_OFF_INCOME_MIN } from './config.js';
 import { C, alpha, moneyScale, catScale } from './theme.js';
 
 let savingsHistoryChart = null;

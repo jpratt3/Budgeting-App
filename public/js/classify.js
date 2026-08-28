@@ -1,9 +1,13 @@
 import { state, bumpGen } from './state.js';
 import {
-  ESSENTIAL_CATS, INCOME_CATS, LAZY_MERCHANTS, LAZY_SURVEY_CATS, P2P_MERCHANTS,
-  PHARMACY_MERCHANTS, RENT_MERCHANTS, REVIEW_CATS_DETAILED, REVIEW_CATS_PRIMARY,
-  RIDESHARE_MERCHANTS, SAVINGS_CATS, SAVINGS_MERCHANTS,
-} from './constants.js';
+  INCOME_CATS, LAZY_MERCHANTS, LAZY_SURVEY_CATS, P2P_MERCHANTS,
+  PHARMACY_MERCHANTS, REVIEW_CATS_DETAILED, REVIEW_CATS_PRIMARY,
+  RIDESHARE_MERCHANTS, SAVINGS_CATS,
+} from './rules.js';
+import {
+  ESSENTIAL_CATS, ESSENTIAL_MERCHANTS, INTERNAL_TRANSFER_MEMOS,
+  RENT_MERCHANTS, SAVINGS_MERCHANTS,
+} from './config.js';
 
 export function isRentTxn(txn) {
   if ((txn.personal_finance_category?.detailed || '') === 'RENT_AND_UTILITIES_RENT') return true;
@@ -62,11 +66,12 @@ function classifyTxn(txn) {
   if (isRentTxn(txn)) return 'essential';
 
   // Internal checking↔savings transfers appear as a pair (one leg per account).
-  // The 'to sv:' / 'from sv:' memo format is bank-specific — adjust for yours.
-  // Count only the checking-side legs ('to sv:' out, 'from sv:' back) as savings
-  // movement; skip the savings-side duplicates so the pair isn't double counted.
-  if (name.includes('to sv:') || name.includes('from sv:')) return 'savings';
-  if (name.includes('from ck:') || name.includes('to ck:')) return 'skip';
+  // Count only the checking-side legs as savings movement; skip the savings-side
+  // duplicates so the pair isn't double counted. The memo format is bank-specific
+  // and lives in config.js — empty there means transfers fall through to the
+  // generic TRANSFER_OUT rule below and stay neutral.
+  if (INTERNAL_TRANSFER_MEMOS.checkingSide.some(m => name.includes(m))) return 'savings';
+  if (INTERNAL_TRANSFER_MEMOS.savingsSide.some(m => name.includes(m))) return 'skip';
 
   // P2P cash apps are account-to-account moves, not spending — stay neutral.
   if (P2P_MERCHANTS.some(m => name.includes(m))) return 'skip';
@@ -96,7 +101,7 @@ function classifyTxn(txn) {
     return 'extra';
   }
   if (ESSENTIAL_CATS.some(c => pfc.startsWith(c) || primary.startsWith(c))) return 'essential';
-  if (name.includes('insurance')) return 'essential';
+  if (ESSENTIAL_MERCHANTS.some(m => name.includes(m))) return 'essential';
 
   // Check decision for anything heading to 'extra'
   const dec = state.decisions[txn.transaction_id];

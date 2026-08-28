@@ -1,5 +1,29 @@
+// Classification rules that apply to everyone: Plaid's category taxonomy and
+// national merchant brands. These should rarely need editing — anything that
+// depends on YOUR bank or YOUR judgment lives in config.js instead.
+
+// Food delivery — the canonical "could have cooked" purchase.
 export const LAZY_MERCHANTS = ['ubereats','uber eats','doordash','door dash','grubhub','postmates','instacart','seamless','caviar','gopuff'];
+
+// Pharmacies sell both medicine and impulse buys, so they go to the review queue
+// rather than being auto-classified either way.
 export const PHARMACY_MERCHANTS = ['walgreens','cvs'];
+
+export const RIDESHARE_MERCHANTS = ['uber','lyft'];
+
+// Peer-to-peer cash apps — account-to-account moves, not purchases.
+export const P2P_MERCHANTS = ['zelle','venmo','cash app','cashapp','apple cash'];
+
+// Plaid category prefixes that land in the review queue rather than being
+// silently counted as ordinary spend.
+export const REVIEW_CATS_PRIMARY = ['FOOD_AND_DRINK','GENERAL_MERCHANDISE','ENTERTAINMENT'];
+export const REVIEW_CATS_DETAILED = ['FOOD_AND_DRINK_FAST_FOOD','FOOD_AND_DRINK_RESTAURANTS','FOOD_AND_DRINK_COFFEE','FOOD_AND_DRINK_ALCOHOL_AND_BARS','GENERAL_MERCHANDISE_CONVENIENCE_STORES','GAMBLING','MEDICAL_PHARMACIES_AND_SUPPLEMENTS'];
+
+export const SAVINGS_CATS = ['SAVINGS','INVESTMENT'];
+export const INCOME_CATS = ['INCOME','TRANSFER_IN'];
+
+// The one-time survey that sets per-category defaults for the review queue:
+// auto-approve, review each one, or auto-regret.
 export const LAZY_SURVEY_CATS = [
   { key: 'delivery',      label: 'Food delivery',          hint: 'UberEats, DoorDash, GrubHub…',
     match: t => LAZY_MERCHANTS.some(m => (t.merchant_name||t.name||'').toLowerCase().includes(m)) },
@@ -27,28 +51,9 @@ export const LAZY_SURVEY_CATS = [
       return PHARMACY_MERCHANTS.some(m => n.includes(m)) || (t.personal_finance_category?.detailed||'').includes('MEDICAL_PHARMACIES');
     } },
 ];
-export const RIDESHARE_MERCHANTS = ['uber','lyft'];
-export const REVIEW_CATS_PRIMARY = ['FOOD_AND_DRINK','GENERAL_MERCHANDISE','ENTERTAINMENT'];
-export const REVIEW_CATS_DETAILED = ['FOOD_AND_DRINK_FAST_FOOD','FOOD_AND_DRINK_RESTAURANTS','FOOD_AND_DRINK_COFFEE','FOOD_AND_DRINK_ALCOHOL_AND_BARS','GENERAL_MERCHANDISE_CONVENIENCE_STORES','GAMBLING','MEDICAL_PHARMACIES_AND_SUPPLEMENTS'];
-export const ESSENTIAL_CATS = ['FOOD_AND_DRINK_GROCERIES','TRANSPORTATION','RENT_AND_UTILITIES','MEDICAL','HEALTHCARE','HOME_IMPROVEMENT','INSURANCE','LOAN_PAYMENTS'];
-export const SAVINGS_CATS = ['SAVINGS','INVESTMENT'];
-export const SAVINGS_MERCHANTS = ['robinhood','schwab','charles schwab','fidelity','vanguard','ally','marcus','sofi','betterment','wealthfront','acorns','wealthsimple','stash','m1 finance','webull','etrade','e*trade','ameritrade','td ameritrade'];
-export const INCOME_CATS = ['INCOME','TRANSFER_IN'];
-// Peer-to-peer cash apps — account-to-account moves, not purchases.
-export const P2P_MERCHANTS = ['zelle','venmo','cash app','cashapp','apple cash'];
-// Rent payees, lowercase substring match. Add your landlord / property manager as
-// it appears on the statement — rent paid by ACH or Zelle often isn't tagged
-// RENT_AND_UTILITIES_RENT by Plaid, and this list is checked before the P2P and
-// transfer skips so that rent still counts as real spend.
-// e.g. const RENT_MERCHANTS = ['acme property mgmt'];
-export const RENT_MERCHANTS = [];
 
-// An income credit at/above this is treated as a one-off lump (e.g. asset sale),
-// charted separately so it doesn't distort the recurring monthly savings rate.
-export const ONE_OFF_INCOME_MIN = 5000;
-
+// Ask Claude panel.
 export const CHAT_TXN_CAP = 800;
-
 export const CHAT_SUGGESTIONS = [
   "What's driving my extras?",
   'Am I on pace vs budget?',

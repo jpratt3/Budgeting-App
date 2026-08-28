@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { LAZY_SURVEY_CATS } from './constants.js';
+import { LAZY_SURVEY_CATS } from './rules.js';
 import { clearDerivedCaches } from './classify.js';
 import { renderAll } from './overview.js';
 import { esc } from './format.js';
