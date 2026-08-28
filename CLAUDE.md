@@ -164,10 +164,26 @@ median. Monthly cost uses the cadence's canonical rate (monthly = 1×), not
 
 `.env` holds `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV`, and optionally `PORT`, `ANTHROPIC_API_KEY`, `APP_NAME`, and `PLAID_USER_ID`. See `.env.example`. Do not delete `.tokens.json` without intending to re-link all bank accounts. `.gitignore` must keep `.env`, `.tokens.json`, and `budget.db` out of git.
 
-## No Tests or Linting
+## Tests
 
-No test suite, no linter, no CI. The `test` script in `package.json` is a placeholder. Verify
-changes by running the server and reconciling displayed numbers against `/api/transactions`
-output. A module-graph smoke check is cheap: `node -e "import('file:///.../public/js/app.js')"`
-won't run in Node (no DOM), but loading the page and checking the console catches import
-mistakes immediately — a missing export is a load-time error, not a runtime one.
+`npm test` runs Node's built-in runner (`node --test`) over `tests/`. No framework, no
+build step, no devDependencies — `public/package.json` marks the frontend directory as
+ESM so Node can import the browser modules directly, and `tests/helpers.mjs` stubs the
+`localStorage` that `getLazyPref()` reads.
+
+Coverage is deliberately narrow: the two pieces of order-dependent money logic.
+- `classify.test.mjs` — the early-return ladder. Rent must outrank the P2P skip or rent
+  paid by Zelle disappears; rideshare must outrank `ESSENTIAL_CATS` or every Uber
+  silently becomes a necessity. Also covers the memo cache and its invalidation.
+- `budget.test.mjs` — longest-prefix matching, so one charge is claimed by exactly one
+  budget item, plus the `state.gen` index invalidation.
+
+Tests that depend on `config.js` read the configured values rather than hardcoding
+them, and `t.skip()` with a reason when a list ships empty — so the same suite is
+stronger on a configured install than on a fresh clone. Both suites are mutation-checked:
+reordering the rent rule below the P2P skip, and swapping longest-prefix for first-match,
+each fail exactly one test.
+
+There is no linter and no CI. Beyond the suite, verify changes by running the server and
+reconciling displayed numbers against `/api/transactions`. A missing export is a
+load-time error in the browser, so the console catches import mistakes immediately.

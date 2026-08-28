@@ -1,0 +1,4 @@
+{
+  "//": "Marks public/ as ES modules so Node can import the frontend directly in tests (the root package.json is CommonJS because server.js uses require). Browsers ignore this file. It is served at /static/package.json like any other file under public/, which is harmless — it contains no dependency list and no secrets.",
+  "type": "module"
+}

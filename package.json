@@ -19,7 +19,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"No test suite yet — see README\" && exit 1"
+    "test": "node --test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.121.0",
