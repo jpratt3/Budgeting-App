@@ -184,6 +184,15 @@ stronger on a configured install than on a fresh clone. Both suites are mutation
 reordering the rent rule below the P2P skip, and swapping longest-prefix for first-match,
 each fail exactly one test.
 
-There is no linter and no CI. Beyond the suite, verify changes by running the server and
+`tests/wiring.test.mjs` catches the three failure modes a build-step-free frontend hides:
+a module importing a name nothing exports, an inline `on*` handler never published to
+`window`, and a `getElementById()` pointing at an id the markup no longer has. All three
+have bitten this codebase.
+
+CI (`.github/workflows/ci.yml`) runs `npm ci` then `npm test` on Node 20, 22, and 24.
+`npm ci` is the meaningful half — it installs strictly from the lockfile and builds
+`better-sqlite3` natively, which is the step most likely to fail for a new user.
+
+There is no linter. Beyond the suite, verify changes by running the server and
 reconciling displayed numbers against `/api/transactions`. A missing export is a
 load-time error in the browser, so the console catches import mistakes immediately.

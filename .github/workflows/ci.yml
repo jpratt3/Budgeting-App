@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only: this workflow never needs to write to the repo.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor is package.json's engines (>=20, set by better-sqlite3).
+        node: ['20', '22', '24']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # npm ci installs strictly from the lockfile, so this also catches a
+      # package.json/package-lock.json mismatch. better-sqlite3 is a native module,
+      # which makes this the step most likely to break for a new user.
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      # The frontend is covered by the suite; these two are CommonJS and are not.
+      - name: Syntax check the server
+        run: |
+          node --check server.js
+          node --check db.js
