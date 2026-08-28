@@ -72,11 +72,18 @@ export function healthChecks() {
   }
 
   // ── 3. Income ─────────────────────────────────────────────────────────────
-  let income = 0, spend = 0;
+  // `spend` is total outflow; `variableSpend` excludes rent, which is covered by a
+  // fixed budget line rather than a variable category. Mixing the two would inflate
+  // the coverage figure below — rent is usually the single biggest charge, so
+  // counting it as "covered" hid genuinely poor category mapping.
+  let income = 0, spend = 0, variableSpend = 0;
   period.forEach(t => {
     const type = classify(t);
-    if (type === 'income') income += -t.amount;
-    else if ((type === 'essential' || type === 'extra') && t.amount > 0) spend += t.amount;
+    if (type === 'income') { income += -t.amount; return; }
+    if ((type === 'essential' || type === 'extra') && t.amount > 0) {
+      spend += t.amount;
+      if (!isRentTxn(t)) variableSpend += t.amount;
+    }
   });
   if (income <= 0) {
     out.push({
@@ -89,9 +96,9 @@ export function healthChecks() {
   }
 
   // ── 4. Budget coverage ────────────────────────────────────────────────────
-  if (spend > 0 && state.budgetItems.some(i => i.type === 'variable')) {
+  if (variableSpend > 0 && state.budgetItems.some(i => i.type === 'variable')) {
     const uncat = uncategorizedTxns().reduce((s, t) => s + t.amount, 0);
-    const coverage = (1 - uncat / spend) * 100;
+    const coverage = (1 - uncat / variableSpend) * 100;
     if (coverage < COVERAGE_FLOOR) {
       out.push({
         id: 'coverage',

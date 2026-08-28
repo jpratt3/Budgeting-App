@@ -15,7 +15,9 @@ node_modules/
 .playwright-mcp/
 start-hidden.vbs
 
-# Personal analysis output
+# Personal analysis output — but README screenshots in docs/ are committed,
+# and those must never contain real balances, merchants, or institutions.
 benchmark-*.md
 *.png
+!docs/*.png
 
