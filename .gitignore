@@ -1,0 +1,21 @@
+# Secrets — never commit
+.env
+.tokens.json
+
+# Local data — contains real transaction ids and balances
+budget.db
+*.db-shm
+*.db-wal
+
+# Deps
+node_modules/
+
+# Local tooling / machine-specific
+.claude/settings.local.json
+.playwright-mcp/
+start-hidden.vbs
+
+# Personal analysis output
+benchmark-*.md
+*.png
+

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div id="lazy-survey-overlay" class="survey-overlay" style="display:none">
+  <div class="survey-modal">
+    <div class="survey-title">How should lazy spending be handled?</div>
+    <p class="survey-desc">This runs once. You can reset it anytime from the Review page.</p>
+    <div class="survey-grid" id="survey-grid"></div>
+    <div class="survey-actions">
+      <button class="btn btn-primary" onclick="saveLazySurvey()">Save &amp; Continue</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">B</span> Budget</div>
+
+    <nav class="nav">
+      <button class="nav-item active" data-page="dashboard" onclick="go('dashboard')"><span class="nav-icon">⌂</span> Dashboard</button>
+      <button class="nav-item" data-page="accounts"     onclick="go('accounts')"><span class="nav-icon">◈</span> Accounts</button>
+      <button class="nav-item" data-page="transactions" onclick="go('transactions')"><span class="nav-icon">▤</span> Transactions</button>
+      <button class="nav-item" data-page="review"       onclick="go('review')"><span class="nav-icon">⚠</span> Review <span class="nav-badge" id="nav-badge-review"></span></button>
+
+      <div class="nav-label">Plan</div>
+      <button class="nav-item" data-page="cashflow"  onclick="go('cashflow')"><span class="nav-icon">⇄</span> Cash Flow</button>
+      <button class="nav-item" data-page="budget"    onclick="go('budget')"><span class="nav-icon">▦</span> Budget</button>
+      <button class="nav-item" data-page="recurring" onclick="go('recurring')"><span class="nav-icon">↻</span> Recurring</button>
+      <button class="nav-item" data-page="growth"    onclick="go('growth')"><span class="nav-icon">◷</span> Growth</button>
+      <button class="nav-item" data-page="reports"   onclick="go('reports')"><span class="nav-icon">◱</span> Reports</button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <button class="nav-item" onclick="connectBank()"><span class="nav-icon">+</span> Connect account</button>
+      <button class="nav-item" onclick="loadAll()"><span class="nav-icon">↻</span> Refresh</button>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ═════════════════════════════════════════════════════════════ -->
+  <div class="main">
+
+    <header class="topbar">
+      <h1 id="page-title">Dashboard</h1>
+      <span class="topbar-meta period-label"></span>
+      <div class="topbar-spacer"></div>
+      <div class="seg">
+        <button data-key="mtd" class="period-btn" onclick="setPeriod('mtd')">MTD</button>
+        <button data-key="ytd" class="period-btn" onclick="setPeriod('ytd')">YTD</button>
+        <button data-key="14"  class="period-btn active" onclick="setPeriod('14')">2W</button>
+        <button data-key="30"  class="period-btn" onclick="setPeriod('30')">1M</button>
+        <button data-key="90"  class="period-btn" onclick="setPeriod('90')">3M</button>
+        <button data-key="180" class="period-btn" onclick="setPeriod('180')">6M</button>
+        <button data-key="365" class="period-btn" onclick="setPeriod('365')">12M</button>
+      </div>
+    </header>
+
+    <!-- ── DASHBOARD ─────────────────────────────────────────────────────── -->
+    <section id="page-dashboard" class="page active">
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-value green" id="income">—</div><span class="kpi-label">Total income</span></div>
+        <div class="kpi"><div class="kpi-value red"   id="spent">—</div><span class="kpi-label">Total spent</span></div>
+        <div class="kpi"><div class="kpi-value"       id="saved">—</div><span class="kpi-label">Net saved</span><span class="kpi-sub" id="savings-rate"></span></div>
+        <div class="kpi clickable" onclick="go('review')"><div class="kpi-value amber" id="lazy-total">—</div><span class="kpi-label">Regretted spend</span><span class="kpi-sub" id="lazy-sub"></span></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Spending breakdown</span></div>
+          <div class="chart-box"><canvas id="spend-pie"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Net worth</span>
+            <span class="card-actions"><span class="card-sub" id="dash-nw-value">—</span></span>
+          </div>
+          <div class="chart-box"><canvas id="net-worth-chart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card card-flush" style="margin-top:14px">
+        <div class="card-head flush">
+          <span class="card-title">Spending pace</span>
+          <span class="card-sub" id="pace-note"></span>
+        </div>
+        <div style="padding:0 18px 16px"><div class="chart-box short"><canvas id="pace-chart"></canvas></div></div>
+      </div>
+
+      <div class="card card-flush" style="margin-top:14px">
+        <div class="card-head flush">
+          <span class="card-title">Recent transactions</span>
+          <span class="card-actions"><button class="btn btn-sm" onclick="go('transactions')">View all</button></span>
+        </div>
+        <div class="row-list" id="dash-recent"><div class="loading">Loading…</div></div>
+      </div>
+    </section>
+
+    <!-- ── ACCOUNTS ──────────────────────────────────────────────────────── -->
+    <section id="page-accounts" class="page">
+      <div class="card">
+        <span class="eyebrow">Net worth</span>
+        <div class="nw-head">
+          <span class="nw-value" id="nw-value">—</span>
+          <span id="nw-delta"></span>
+        </div>
+        <span class="card-sub" id="nw-note">cash − credit card balances</span>
+        <div class="chart-box" style="margin-top:14px"><canvas id="accounts-nw-chart"></canvas></div>
+      </div>
+
+      <div class="grid-2" style="margin-top:14px">
+        <div class="card card-flush">
+          <div class="card-head flush"><span class="card-title">Balances</span>
+            <span class="card-actions"><span class="card-sub" id="bal-source"></span></span>
+          </div>
+          <div class="row-list" id="accounts-list"><div class="loading">Loading…</div></div>
+        </div>
+        <div class="card card-flush">
+          <div class="card-head flush"><span class="card-title">Connected institutions</span></div>
+          <div style="padding:4px 18px 18px;display:flex;flex-wrap:wrap;gap:7px" id="connected-accounts"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TRANSACTIONS ──────────────────────────────────────────────────── -->
+    <section id="page-transactions" class="page">
+      <div class="card card-flush">
+        <div class="card-head flush">
+          <span class="card-title">All transactions</span>
+          <span class="card-sub" id="txn-count"></span>
+          <span class="card-actions">
+            <div class="seg" id="txn-filter">
+              <button class="active" data-filter="all" onclick="setTxnFilter('all', this)">All</button>
+              <button data-filter="essential" onclick="setTxnFilter('essential', this)">Essentials</button>
+              <button data-filter="extra"     onclick="setTxnFilter('extra', this)">Extras</button>
+              <button data-filter="savings"   onclick="setTxnFilter('savings', this)">Savings</button>
+              <button data-filter="income"    onclick="setTxnFilter('income', this)">Income</button>
+            </div>
+          </span>
+        </div>
+        <div class="row-list" id="txn-list"><div class="loading">Loading…</div></div>
+      </div>
+    </section>
+
+    <!-- ── REVIEW (lazy spending) ────────────────────────────────────────── -->
+    <section id="page-review" class="page">
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-value amber" id="lazy-count">—</div><span class="kpi-label">Needs review</span></div>
+        <div class="kpi"><div class="kpi-value"       id="lazy-sum">—</div><span class="kpi-label">Unreviewed $</span></div>
+        <div class="kpi"><div class="kpi-value green" id="lazy-approved">—</div><span class="kpi-label">Worth it</span></div>
+        <div class="kpi"><div class="kpi-value red"   id="lazy-disapproved">—</div><span class="kpi-label">Regret it</span></div>
+      </div>
+      <div class="card card-flush">
+        <div class="card-head flush">
+          <span class="card-title">Flagged spending</span>
+          <span class="card-actions"><button class="btn btn-sm" onclick="resetLazySurvey()">⚙ Category rules</button></span>
+        </div>
+        <div class="row-list" id="lazy-list"><div class="loading">Loading…</div></div>
+      </div>
+    </section>
+
+    <!-- ── CASH FLOW ─────────────────────────────────────────────────────── -->
+    <section id="page-cashflow" class="page">
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-value green" id="cf-income">—</div><span class="kpi-label">Total income</span></div>
+        <div class="kpi"><div class="kpi-value red"   id="cf-expenses">—</div><span class="kpi-label">Total expenses</span></div>
+        <div class="kpi"><div class="kpi-value"       id="cf-net">—</div><span class="kpi-label">Net income</span></div>
+        <div class="kpi"><div class="kpi-value"       id="cf-rate">—</div><span class="kpi-label">Savings rate</span></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="eyebrow eyebrow-accent">Cash flow</span>
+          <span class="card-sub period-label"></span>
+        </div>
+        <div class="sankey-wrap" id="sankey-wrap"><div class="loading">Loading…</div></div>
+      </div>
+    </section>
+
+    <!-- ── BUDGET ────────────────────────────────────────────────────────── -->
+    <section id="page-budget" class="page">
+      <div class="grid-2">
+        <div>
+          <div class="card card-flush">
+            <div class="card-head flush">
+              <span class="card-title">Fixed monthly expenses</span>
+              <span class="card-actions"><button class="btn btn-sm" onclick="addBudgetItem('constant')">+ Add</button></span>
+            </div>
+            <div id="budget-constants-list"></div>
+          </div>
+          <div class="card card-flush">
+            <div class="card-head flush">
+              <span class="card-title">Variable spending goals</span>
+              <span class="card-actions"><button class="btn btn-sm" onclick="addBudgetItem('variable')">+ Add</button></span>
+            </div>
+            <div id="budget-variables-list"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-head"><span class="card-title">Monthly projection</span></div>
+            <div class="proj-row"><span>Monthly income (estimated)</span><span id="proj-income">—</span></div>
+            <div class="proj-row"><span>Fixed expenses</span><span id="proj-constants">—</span></div>
+            <div class="proj-row"><span>Variable budgets</span><span id="proj-variables">—</span></div>
+            <div class="proj-divider"></div>
+            <div class="proj-row proj-result"><span>Projected monthly savings</span><span id="proj-savings">—</span></div>
+            <div class="proj-row proj-result"><span>Actual savings <span class="period-label" style="font-weight:400;opacity:0.6"></span></span><span id="proj-actual">—</span></div>
+            <div class="proj-divider"></div>
+            <div class="proj-row" style="font-size:0.78rem"><span>Spending categorized</span><span id="proj-coverage">—</span></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><span class="card-title">Budget vs actual</span></div>
+            <div class="chart-box"><canvas id="budget-chart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RECURRING ─────────────────────────────────────────────────────── -->
+    <section id="page-recurring" class="page">
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-value" id="rec-count">—</div><span class="kpi-label">Recurring merchants</span></div>
+        <div class="kpi"><div class="kpi-value red" id="rec-monthly">—</div><span class="kpi-label">Est. monthly cost</span></div>
+        <div class="kpi"><div class="kpi-value red" id="rec-annual">—</div><span class="kpi-label">Est. annual cost</span></div>
+        <div class="kpi"><div class="kpi-value" id="rec-share">—</div><span class="kpi-label">Share of spending</span></div>
+      </div>
+      <div class="card card-flush">
+        <div class="card-head flush">
+          <span class="card-title">Detected recurring charges</span>
+          <span class="card-sub">from 12 months of history</span>
+        </div>
+        <div class="row-list" id="recurring-list"><div class="loading">Loading…</div></div>
+      </div>
+      <p class="page-intro" style="margin-top:12px">
+        Detection is heuristic: a merchant needs 3+ charges with a consistent gap (weekly, monthly, or yearly)
+        and stable amounts. Nothing here is written to the database.
+      </p>
+    </section>
+
+    <!-- ── GROWTH ────────────────────────────────────────────────────────── -->
+    <section id="page-growth" class="page">
+      <div class="card">
+        <div class="growth-controls">
+          <div class="field">
+            <label>Monthly savings</label>
+            <input id="growth-savings" type="number" step="50" placeholder="0" oninput="this.dataset.manual='1';renderGrowth()">
+            <span class="field-hint">auto-filled from budget</span>
+          </div>
+          <div class="field">
+            <label>Annual return %</label>
+            <input id="growth-return" type="number" step="0.5" min="0" max="30" value="7" oninput="this.dataset.manual='1';renderGrowth()">
+            <span class="field-hint">nominal, compounded monthly</span>
+          </div>
+          <div class="field">
+            <label>Starting balance</label>
+            <input id="growth-start" type="number" step="100" placeholder="0" oninput="this.dataset.manual='1';renderGrowth()">
+            <span class="field-hint">auto-filled from accounts</span>
+          </div>
+          <div class="field">
+            <button id="growth-lazy-btn" class="btn" onclick="toggleLazyGrowth()">+ Include lazy savings</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-title">Portfolio growth projection</span></div>
+        <div class="chart-box tall"><canvas id="growth-chart"></canvas></div>
+      </div>
+
+      <div class="card card-flush">
+        <div class="card-head flush">
+          <span class="card-title">Goals</span>
+          <span class="card-actions"><button class="btn btn-sm" onclick="addMilestone()">+ Add goal</button></span>
+        </div>
+        <div id="milestones-list"></div>
+      </div>
+    </section>
+
+    <!-- ── REPORTS ───────────────────────────────────────────────────────── -->
+    <section id="page-reports" class="page">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Savings history</span>
+          <span class="card-actions">
+            <div class="seg">
+              <button class="hist-btn" data-hkey="3"  onclick="setHistoryRange(3)">3M</button>
+              <button class="hist-btn" data-hkey="6"  onclick="setHistoryRange(6)">6M</button>
+              <button class="hist-btn active" data-hkey="12" onclick="setHistoryRange(12)">12M</button>
+            </div>
+          </span>
+        </div>
+        <div class="chart-box tall"><canvas id="savings-history-chart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-title">Net worth history</span></div>
+        <div class="chart-box"><canvas id="reports-nw-chart"></canvas></div>
+      </div>
+
+      <div class="grid-3" style="margin-top:14px">
+        <div class="card card-flush">
+          <div class="card-head flush"><span class="card-title">Essentials</span>
+            <span class="card-actions"><span class="card-sub" id="essentials-total">$0</span></span></div>
+          <div id="essentials-list"><div class="loading">Loading…</div></div>
+        </div>
+        <div class="card card-flush">
+          <div class="card-head flush"><span class="card-title">Extras</span>
+            <span class="card-actions"><span class="card-sub" id="extras-total">$0</span></span></div>
+          <div id="extras-list"><div class="loading">Loading…</div></div>
+        </div>
+        <div class="card card-flush">
+          <div class="card-head flush"><span class="card-title">Savings &amp; investing</span>
+            <span class="card-actions"><span class="card-sub" id="savings-total">$0</span></span></div>
+          <div id="savings-list"><div class="loading">Loading…</div></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ══ ASK CLAUDE ═══════════════════════════════════════════════════════════ -->
+<button class="chat-fab" id="chat-fab" onclick="toggleChat()" title="Ask about your money">💬</button>
+
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-head">
+    <div>
+      <strong>Ask about your money</strong>
+      <span class="chat-sub" id="chat-scope">—</span>
+    </div>
+    <div>
+      <button onclick="resetChat()" title="Clear conversation">⟲</button>
+      <button onclick="toggleChat()" title="Close">✕</button>
+    </div>
+  </div>
+  <div class="chat-log" id="chat-log"></div>
+  <div class="chat-input-row">
+    <textarea id="chat-input" rows="1" placeholder="e.g. what's driving my extras this month?" onkeydown="chatKey(event)" oninput="chatGrow(this)"></textarea>
+    <button id="chat-send" onclick="sendChat()">↑</button>
+  </div>
+</div>
+
+<script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
