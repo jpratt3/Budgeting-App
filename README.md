@@ -1,12 +1,15 @@
 # Budget
 
-Budget is a self-hosted dashboard for people who want a clear view of real bank
-activity without handing their budgeting workflow to a hosted app. It links accounts
-through [Plaid](https://plaid.com), classifies transactions, and tracks spending against
-the budget you set. Runs entirely on your own machine: no hosted component, no account,
-no data leaving your box except the calls to Plaid.
+This is a locally hosted budgeting app for people who want a customizable platform to
+view of real bank activity. It links accountsthrough [Plaid](https://plaid.com),
+classifies transactions, and tracks spending against the budget you set. Runs entirely
+on your own machine: no data leaving your box except the calls to Plaid.
 
 ![Dashboard](docs/dashboard.png)
+
+All screenshots use fictional financial data. Setup Health shows an intentionally
+under-configured state. Dashboard, Cash Flow, Budget, and chat show the month before
+review. Review and Recurring show it after six decisions, with 11 purchases left.
 
 ## What it does
 
@@ -17,7 +20,8 @@ no data leaving your box except the calls to Plaid.
   spending.
 - Shows cash flow as a Sankey: income on the left, categories on the right.
 - Tracks fixed monthly constants and variable categories mapped to Plaid category
-  prefixes. Longest-prefix-first matching prevents double counting.
+  prefixes. Longest-prefix-first matching prevents double counting. Click any populated
+  variable category to inspect the transactions behind its actual.
 - Detects recurring charges from 12 months of history. See cadence, amount, next expected
   date, and monthly cost.
 - Flags discretionary purchases for review. Mark each one Essential, Worth it, or Regret
@@ -25,6 +29,26 @@ no data leaving your box except the calls to Plaid.
 - Projects growth toward savings goals and estimates time to target.
 - Includes an optional Ask Claude panel for questions against the dashboard's current data
   snapshot.
+
+### Ask Claude
+
+Set `ANTHROPIC_API_KEY` in `.env` and restart the server to enable the embedded chat
+panel. Ask about balances, budget targets, transactions in the selected period, or monthly
+history. The key stays server-side, but the dashboard snapshot is sent to Anthropic when
+you ask a question.
+
+![Ask Claude with mocked data](docs/ask-claude.png)
+
+*Example shown with mocked financial data.*
+
+### Expand a budget category
+
+Click any variable budget row with matched transactions to see the merchant, date, and
+amount behind its actual.
+
+![Expanded budget category with mocked data](docs/budget-category.png)
+
+*Example shown with mocked financial data.*
 
 ### Cash flow
 
@@ -35,11 +59,15 @@ agree.
 
 ### The review queue
 
-Discretionary purchases are flagged with a reason. Choose **Essential** to promote a
-purchase out of discretionary spending, **Worth it**, or **Regret it**. Verdicts persist,
-and the pie, stats, and growth what-if all use them.
+Not all purchases are equal - two trips to CVS can mean different things: were you
+purchasing cold medication or the junk food you are trying to avoid? Choose **Essential**
+to promote a purchase out of discretionary spending, **Worth it**, or **Regret it**.
+Verdicts persist - the pie, stats, and growth what-if all use them.
 
 ![Review queue](docs/review.png)
+
+*Six decisions are complete: one Essential, two Worth it, and three Regret it. Eleven
+remain.*
 
 ### Recurring charges
 
@@ -70,6 +98,9 @@ silently produce wrong numbers, so a fresh clone is under-configured on purpose.
 dashboard reports what is missing.
 
 ![Setup health](docs/setup-health.png)
+
+*This is an intentionally under-configured example. Its totals differ from the configured
+screenshots above.*
 
 Start with these two settings:
 
