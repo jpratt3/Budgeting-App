@@ -1,7 +1,7 @@
 # Budget
 
 This is a locally hosted budgeting app for people who want a customizable platform to
-view of real bank activity. It links accountsthrough [Plaid](https://plaid.com),
+view of real bank activity. It links accounts through [Plaid](https://plaid.com),
 classifies transactions, and tracks spending against the budget you set. Runs entirely
 on your own machine: no data leaving your box except the calls to Plaid.
 
