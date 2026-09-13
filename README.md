@@ -1,15 +1,84 @@
 # Budget
 
-This is a locally hosted budgeting app for people who want a customizable platform to
-view of real bank activity. It links accounts through [Plaid](https://plaid.com),
-classifies transactions, and tracks spending against the budget you set. Runs entirely
-on your own machine: no data leaving your box except the calls to Plaid.
+[![CI](https://github.com/jpratt3/Budgeting-App/actions/workflows/ci.yml/badge.svg)](https://github.com/jpratt3/Budgeting-App/actions/workflows/ci.yml)
+
+This is a locally hosted budgeting app for people who want a customizable view of real
+bank activity. It links accounts through [Plaid](https://plaid.com), classifies
+transactions, and tracks spending against the budget you set. It runs entirely on your
+own machine: nothing leaves your box except the calls to Plaid, and — only if you enable
+the optional Ask Claude panel — the dashboard snapshot that panel sends to Anthropic.
 
 ![Dashboard](docs/dashboard.png)
 
 All screenshots use fictional financial data. Setup Health shows an intentionally
 under-configured state. Dashboard, Cash Flow, Budget, and chat show the month before
 review. Review and Recurring show it after six decisions, with 11 purchases left.
+
+## Architecture
+
+```mermaid
+flowchart TB
+  Plaid["Plaid API<br/>balances · 12 months of transactions"]
+
+  subgraph server ["server.js · Express"]
+    Routes["REST routes"]
+    Guard["Loopback bind · Host allowlist · no CORS grant"]
+  end
+
+  subgraph ladder ["Classification ladder — the order is load-bearing"]
+    Net["Net out internal transfers + card bill payments"]
+    Rent["RENT_MERCHANTS &nbsp;<b>outranks</b>&nbsp; the P2P skip"]
+    Ride["Rideshare &nbsp;<b>outranks</b>&nbsp; ESSENTIAL_CATS"]
+    Cats["Plaid taxonomy · longest prefix wins"]
+    Out(["essential · extra · savings · income"])
+  end
+
+  subgraph views ["Dashboard · public/js"]
+    Dash["Balances + net worth<br/>checking + savings − credit"]
+    Flow["Cash flow Sankey"]
+    Budget["Budget categories"]
+    Recur["Recurring detection<br/>3+ charges · stable cadence · 2-cycle timeout"]
+    Review["Review queue<br/>Essential / Worth it / Regret it"]
+    Chat["Ask Claude panel <i>(optional)</i><br/>sends snapshot to Anthropic"]
+  end
+
+  subgraph persist ["Persistence"]
+    DB[("<i>db.js</i> · SQLite<br/>budgets · goals · snapshots · verdicts")]
+    Growth["Goal projection<br/>regret compounding what-if"]
+  end
+
+  Health["<i>health.js</i> · setup checks<br/>flags config that would silently produce wrong numbers"]
+
+  Plaid --> Routes
+  Guard -.-> Routes
+  Routes --> Net
+  Net --> Rent --> Ride --> Cats --> Out
+  Out --> Dash & Flow & Budget & Recur & Review & Chat
+  Review -->|verdicts persist| DB
+  DB --> Growth
+  Health -.->|audits| Cats
+
+  classDef extC fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+  classDef srvC fill:#ede9fe,stroke:#6d28d9,color:#4c1d95
+  classDef ladC fill:#fef3c7,stroke:#b45309,color:#78350f
+  classDef viewC fill:#dcfce7,stroke:#15803d,color:#14532d
+  classDef persC fill:#e0e7ff,stroke:#4338ca,color:#312e81
+  classDef healthC fill:#ffe4e6,stroke:#be123c,color:#881337
+  classDef grp fill:#f8fafc,stroke:#cbd5e1,color:#475569
+  class Plaid extC
+  class Routes,Guard srvC
+  class Net,Rent,Ride,Cats,Out ladC
+  class Dash,Flow,Budget,Recur,Review,Chat viewC
+  class DB,Growth persC
+  class Health healthC
+  class server,ladder,views,persist grp
+```
+
+Classification is a ladder, not a lookup, and the rung order is the part that matters.
+Plaid does not tag Zelle rent as `RENT_AND_UTILITIES_RENT`, so if the P2P skip ran first
+the largest monthly expense would vanish from spending entirely. Rideshare has to outrank
+`ESSENTIAL_CATS` or every Uber becomes a necessity. The tests cover the ordering rather
+than the arithmetic, because the arithmetic is not where this breaks.
 
 ## What it does
 
@@ -178,9 +247,3 @@ list is empty, they skip with a reason, so the suite gets stronger once you conf
 This is a personal project published because the classification approach might be useful to
 someone else. Adjust `config.js` before the numbers reconcile against your statements. The
 setup banner tells you when they will not.
-
-## Notes
-
-- Technical note: the opening claim that data leaves the machine only for Plaid conflicts
-  with the optional Claude panel described above. That panel sends a dashboard snapshot to
-  Anthropic when enabled.
